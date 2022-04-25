@@ -1,0 +1,140 @@
+#include "Adafruit_HT1632.h"
+ 
+#define HT_DATA 2
+#define HT_WR 3
+#define HT_CS 4
+#define HT_CS2 5
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+ 
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+#define OLED_RESET 6 
+#define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+ 
+#define LOGO_HEIGHT 16
+#define LOGO_WIDTH 16
+ 
+ 
+ 
+// use this line for single matrix
+Adafruit_HT1632LEDMatrix matrix = Adafruit_HT1632LEDMatrix(HT_DATA, HT_WR, HT_CS);
+// use this line for two matrices!
+//Adafruit_HT1632LEDMatrix matrix = Adafruit_HT1632LEDMatrix(HT_DATA, HT_WR, HT_CS, HT_CS2);
+ // Basic demo for readings from Adafruit SCD30
+#include <Adafruit_SCD30.h>
+
+Adafruit_SCD30  scd30;
+
+void setup() {
+Serial.begin(9600);
+matrix.begin(ADA_HT1632_COMMON_16NMOS);
+matrix.fillScreen();
+delay(500);
+matrix.clearScreen();
+matrix.setTextWrap(false);
+
+  while (!Serial) delay(10);     // will pause Zero, Leonardo, etc until serial console opens
+
+  Serial.println("Adafruit SCD30 test!");
+
+  // Try to initialize!
+  if (!scd30.begin()) {
+    Serial.println("Failed to find SCD30 chip");
+    while (1) { delay(10); }
+  }
+  Serial.println("SCD30 Found!");
+
+
+  // if (!scd30.setMeasurementInterval(10)){
+  //   Serial.println("Failed to set measurement interval");
+  //   while(1){ delay(10);}
+  // }
+  Serial.print("Measurement Interval: "); 
+  Serial.print(scd30.getMeasurementInterval()); 
+  Serial.println(" seconds");
+  
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+Serial.println(F("SSD1306 allocation failed"));
+for(;;); // Don't proceed, loop forever
+}
+ 
+// Show initial display buffer contents on the screen --
+// the library initializes this with an Adafruit splash screen.
+display.display();
+delay(2000); // Pause for 2 seconds
+ 
+// Clear the buffer
+display.clearDisplay();
+ 
+// Show the display buffer on the screen. You MUST call display() after
+// drawing commands to make them visible on screen!
+display.display();
+delay(2000);
+// display.display() is NOT necessary after every single drawing command,
+// unless that's what you want...rather, you can batch up a bunch of
+// drawing operations and then update the screen all at once by calling
+// display.display(). These examples demonstrate both approaches...
+ 
+ 
+ testscrolltext();
+ 
+}
+
+ 
+void loop() {
+ 
+ 
+for(uint8_t i=0; i<4; i++) {
+//matrix.setRotation(i);
+//matrix.clearScreen();
+matrix.setCursor(0, 0);
+matrix.print("27C");
+matrix.writeScreen();
+delay(1000);
+
+}
+
+if (scd30.dataReady()){
+    Serial.println("Data available!");
+
+    if (!scd30.read()){ Serial.println("Error reading sensor data"); return; }
+
+    Serial.print("Temperature: ");
+    Serial.print(scd30.temperature);
+    Serial.println(" degrees C");
+    
+    Serial.print("Relative Humidity: ");
+    Serial.print(scd30.relative_humidity);
+    Serial.println(" %");
+    
+    Serial.print("CO2: ");
+    Serial.print(scd30.CO2, 3);
+    Serial.println(" ppm");
+    Serial.println("");
+  } else {
+    //Serial.println("No data");
+  }
+
+  delay(100);
+  
+}
+
+
+void testscrolltext(void) {
+display.clearDisplay();
+ 
+display.setTextSize(2); // Draw 2X-scale text
+display.setTextColor(SSD1306_WHITE);
+display.setCursor(10, 0);
+display.println(F("peeter"));
+display.display(); // Show initial text
+delay(100);
+ 
+ 
+}
+ 
