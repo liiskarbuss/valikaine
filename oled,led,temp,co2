@@ -19,8 +19,14 @@ Adafruit_MPL115A2 mpl115a2;
 Adafruit_SCD30  scd30;
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
+int sensor = 10;              // the pin that the sensor is atteched to
+int state = LOW;             // by default, no motion detected
+int val = 0;                 // variable to store the sensor status (value)
+int cnt; //counter
+
 void setup(void) {
   Serial.begin(9600);
+  pinMode(sensor, INPUT);    // initialize sensor as an input
   while (!Serial) delay(10);     // will pause Zero, Leonardo, etc until serial console opens
 
   Serial.println("Getting barometric pressure ...");
@@ -92,16 +98,21 @@ void loop() {
     pressureKPA = mpl115a2.getPressure();
     temperatureC = mpl115a2.getTemperature();
     display.setTextSize(1);
-    display.print("CO2:");
+    display.print("CO2:      ");
     display.print(scd30.CO2, 2);
     // display.setCursor(100, 20);
     display.println(" ppm");
+    
+    display.print("Humidity: ");
+    display.print(scd30.relative_humidity);
+    // display.setCursor(100, 20);
+    display.println(" %");
 
-    display.print("Pressure:");
+    display.print("Pressure: ");
     display.print(pressureKPA);
     display.println(" kPa");
-
-    display.print("Temp:");
+    
+    display.print("Temp:     ");
     display.print(temperatureC);
     display.println(" C");
 
@@ -120,7 +131,7 @@ void loop() {
   else if(CO2 > 440 && CO2 < 1000) {
 
     matrix.setCursor(0, 0);
-    matrix.print(":|");
+    matrix.print(":/");
     matrix.writeScreen();
   }
   else if(CO2 >= 1000 && CO2 <= 2000){
@@ -134,7 +145,33 @@ void loop() {
     matrix.writeScreen();
     }
   }
-  
+  val = digitalRead(sensor);   // read sensor value
+  if (val == HIGH) {           // check if the sensor is HIGh
+    delay(500);                // delay 100 milliseconds 
+    cnt = 0;
+    /*if (state == LOW) {
+      Serial.println("Motion detected!"); 
+      state = HIGH;       // update variable state to HIGH'
+      
+    }*/
+  } 
+  else {
+      
+     // delay(500);             // delay 200 milliseconds 
+      cnt++;
+      if(cnt == 25){
+        while(val == LOW){
+          matrix.clearScreen(); // lülita maatrix välja
+          val = digitalRead(sensor);
+          // ei saanud debugida kas töötab aga teoorias kui ca 2 min pole liikumist siis lülitab maatrixi völja
+           
+          }
+        }
+      /*if (state == HIGH){
+        Serial.println("Motion stopped!");
+        state = LOW;       // update variable state to LOW
+    }*/
+  }
   delay(5000);
   matrix.clearScreen();
 }
