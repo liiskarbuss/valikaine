@@ -1,0 +1,150 @@
+/**************************************************************************
+ This is an example for our Monochrome OLEDs based on SSD1306 drivers
+
+  This example is for a 128x64 pixel display using I2C to communicate
+ 3 pins are required to interface (two I2C and one reset).
+
+ **************************************************************************/
+
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_HT1632.h>
+#include <Adafruit_MPL115A2.h>
+
+int inputPin = 10;               // choose the input pin (for PIR sensor)
+int pirState = LOW;             // we start, assuming no motion detected
+int val = 0;                    // variable for reading the pin status
+ 
+Adafruit_MPL115A2 mpl115a2;
+// SPI pins for LEDMatrix
+#define HT_DATA 2 
+#define HT_WR   3
+#define HT_CS   4
+#define HT_CS2  5
+// SPI communication parameters for single matrix
+Adafruit_HT1632LEDMatrix matrix = Adafruit_HT1632LEDMatrix(HT_DATA, HT_WR, HT_CS);
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+// The pins for I2C on UNO, NANO are defined by the Wire-library: A4(SDA), A5(SCL)
+#define OLED_RESET     8 // Reset pin # (or -1 if sharing Arduino reset pin)
+//NB! CHANGED to 8 from original D4, which is used by SPI!
+#define SCREEN_ADDRESS 0x3D ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(inputPin, INPUT);     // declare sensor as input
+ 
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+  
+  
+  // initialise LEDMatrix
+  matrix.begin(ADA_HT1632_COMMON_16NMOS);  matrix.fillScreen();
+  delay(500);
+  
+  
+  Serial.println("Getting barometric pressure ...");
+  if (! mpl115a2.begin()) {
+    Serial.println("Sensor not found! Check wiring");
+    while (1);
+  }
+  
+}
+
+void loop() {
+   // Clear the OLED buffer
+  display.clearDisplay();
+  // Clear LEDMAtrix
+  matrix.clearScreen();
+  
+  // Draw a single OLED pixel in white
+  display.drawPixel(10, 10, SSD1306_WHITE);
+
+  // Show the OLED display buffer on the screen. You MUST call display() after
+  // drawing commands to make them visible on screen!
+  display.display();
+  // display.display() is NOT necessary after every single drawing command,
+  // you can batch up a bunch of drawing operations and then update the screen all at once
+  // These examples demonstrate both approaches...
+
+  // draw a pixel on LEDMatrix!
+  matrix.drawPixel(0, 0, 1);
+  matrix.writeScreen();
+  
+  delay(1000);  
+ // draw a big rect on LEDMatrix
+  matrix.fillRect(matrix.width()/4, matrix.height()/4,
+                  matrix.width()/2, matrix.height()/2, 1);
+  matrix.writeScreen();
+  // draw an 'X' on LEDMatrix
+  matrix.clearScreen();
+  matrix.drawLine(0, 0, matrix.width()-1, matrix.height()-1, 1);
+  matrix.drawLine(matrix.width()-1, 0, 0, matrix.height()-1, 1);
+  matrix.writeScreen();
+  delay(500);
+
+  // Draw scrolling text on OLED
+  testscrolltext();
+
+  // fill a circle on LEDMatrix
+  matrix.clearScreen();
+  matrix.fillCircle(matrix.width()/2-1, matrix.height()/2-1, 7, 1);
+  matrix.writeScreen();
+
+  float pressureKPA = 0, temperatureC = 0;
+   
+  mpl115a2.getPT(&pressureKPA,&temperatureC);
+  Serial.print("Pressure (kPa): "); Serial.print(pressureKPA, 4); Serial.print(" kPa ");
+  Serial.print("Temp (*C): "); Serial.print(temperatureC, 1); Serial.println(" *C both measured together");
+   
+  pressureKPA = mpl115a2.getPressure();
+  Serial.print("Pressure (kPa): "); Serial.print(pressureKPA, 4); Serial.println(" kPa");
+   
+  temperatureC = mpl115a2.getTemperature();
+  Serial.print("Temp (*C): "); Serial.print(temperatureC, 1); Serial.println(" *C");
+   
+
+val = digitalRead(inputPin);  // read input value
+  if (val == HIGH) {            // check if the input is HIGH
+   // digitalWrite(ledPin, HIGH);  // turn LED ON
+    if (pirState == LOW) {
+      // we have just turned on
+      Serial.println("Motion detected!");
+      // We only want to print on the output change, not state
+      pirState = HIGH;
+    }
+  } else {
+   // digitalWrite(ledPin, LOW); // turn LED OFF
+    if (pirState == HIGH){
+      // we have just turned of
+      Serial.println("Motion ended!");
+      // We only want to print on the output change, not state
+      pirState = LOW;
+    }
+  }
+
+  
+  delay(500);
+
+}
+
+
+void testscrolltext(void) {
+  display.clearDisplay();
+
+  display.setTextSize(2); // Draw 2X-scale text
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(10, 0);
+  display.println(F("scroll"));
+  display.display();      // Show initial text
+  delay(100);
+
+}
