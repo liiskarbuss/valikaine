@@ -174,4 +174,5 @@ void loop() {
   }
   delay(5000);
   matrix.clearScreen();
+  
 }
