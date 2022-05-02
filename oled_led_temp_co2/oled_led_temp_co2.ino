@@ -24,151 +24,169 @@ int sensor = 10;              // the pin that the sensor is atteched to
 int state = LOW;             // by default, no motion detected
 int val = 0;                 // variable to store the sensor status (value)
 int cnt; //counter
+int pir_status = 0; //determines whether motion is detected or not
 
 void setup(void) {
-  Serial.begin(9600);
-  pinMode(sensor, INPUT);    // initialize sensor as an input
-  while (!Serial) delay(10);     // will pause Zero, Leonardo, etc until serial console opens
+    Serial.begin(9600);
+    pinMode(sensor, INPUT);    // initialize sensor as an input
+    while (!Serial) delay(10);     // will pause Zero, Leonardo, etc until serial console opens
 
-  Serial.println("Getting barometric pressure ...");
-  if (! mpl115a2.begin()) {
-    Serial.println("Sensor not found! Check wiring");
-
-  }
-  Serial.println("SCD30 OLED CO2 meter!");
-
-  // Try to initialize!
-  if (!scd30.begin()) {
-    Serial.println("Failed to find SCD30 sensor");
-    {
-      delay(10);
+    Serial.println("Getting barometric pressure ...");
+    if (! mpl115a2.begin()) 
+	{
+        Serial.println("Sensor not found! Check wiring");
     }
-  }
-  Serial.println("SCD30 Found!");
+    Serial.println("SCD30 OLED CO2 meter!");
 
-
-  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3D)) { // Address 0x3C for 128x32
-    Serial.println(F("SSD1306 allocation failed"));
-  }
-
-  if (!scd30.setMeasurementInterval(3)) {
-    Serial.println("Failed to set measurement interval"); {
-      delay(10);
+    // Try to initialize!
+    if (!scd30.begin()) 
+	{
+        Serial.println("Failed to find SCD30 sensor");
+        {
+            delay(10);
+        }
     }
-  }
-  Serial.print("Measurement Interval: ");
-  Serial.print(scd30.getMeasurementInterval());
-  Serial.println(" seconds");
-
-  display.display();
-  delay(500); // Pause for half second
-
-  display.setTextSize(2);
-  display.setTextColor(WHITE);
-  display.setRotation(0);
+    Serial.println("SCD30 Found!");
 
 
-  matrix.begin(ADA_HT1632_COMMON_16NMOS);
-  matrix.fillScreen();
-  delay(500);
-  matrix.clearScreen();
-  matrix.setTextWrap(false);
+    // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3D)) 
+	{ // Address 0x3C for 128x32
+        Serial.println(F("SSD1306 allocation failed"));
+    }
+
+    if (!scd30.setMeasurementInterval(3)) 
+	{
+        Serial.println("Failed to set measurement interval");
+    }
+    Serial.print("Measurement Interval: ");
+    Serial.print(scd30.getMeasurementInterval());
+    Serial.println(" seconds");
+
+    display.display();
+    delay(500); // Pause for half second
+
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setRotation(0);
+
+
+    matrix.begin(ADA_HT1632_COMMON_16NMOS);
+    matrix.fillScreen();
+    delay(500);
+    matrix.clearScreen();
+    matrix.setTextWrap(false);
 }
 
 
 void loop() {
-  Serial.println("Loop begin");
-  if (scd30.dataReady()) {
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    
-
-    if (!scd30.read()) {
-      Serial.println("Error reading sensor data");
-      display.println("READ ERR");
-      display.display();
+    Serial.println("Loop begin");
+    int pirinput = analogRead(A0);
+    if(pirinput > 500 && !pir_status)
+    {
+	    pir_status = 1;
     }
-    float pressureKPA = 0, temperatureC = 0;
-    float CO2 = 0;
-    CO2 = scd30.CO2;
-	//CO2 = 2200;
-	mpl115a2.getPT(&pressureKPA, &temperatureC);
-    pressureKPA = mpl115a2.getPressure();
-    temperatureC = mpl115a2.getTemperature();
-	
-    
-    if(CO2 > 2000)
-	{
-		display.setTextSize(2);
-		display.print("CO2:      ");
-		display.print(CO2, 2);
-		
-	}
-	else
-	{
-		display.setTextSize(1);
-		display.print("CO2:      ");
-		display.print(CO2, 2);
-		// display.setCursor(100, 20);
-		display.println(" ppm");
-		
-		display.print("Humidity: ");
-		display.print(scd30.relative_humidity);
-		// display.setCursor(100, 20);
-		display.println(" %");
-
-		display.print("Pressure: ");
-		display.print(pressureKPA);
-		display.println(" kPa");
-		
-		display.print("Temp:     ");
-		display.print(temperatureC);
-		display.println(" C");
-
-		
-	}
-	display.display();
+    if(pirinput < 300 && pir_status)
+    {
+	    pir_status = 0;
+    }
   
-  if (CO2 <= 440 && CO2 >= 250) {
-    matrix.setCursor(0, 0);
-    matrix.print(":)");
-    matrix.writeScreen();
-  }
-  else if (CO2 < 250) {
-    matrix.setCursor(0, 0);
-    matrix.print("???");
-    matrix.writeScreen();
-  }
-  else if(CO2 > 440 && CO2 < 1000) {
+    if (scd30.dataReady()) 
+    {
+    
+        if (!scd30.read()) 
+		{
+            Serial.println("Error reading sensor data");
+            display.println("READ ERR");
+            display.display();
+		}
+		float pressureKPA = 0, temperatureC = 0;
+		float CO2 = 0;
+		CO2 = scd30.CO2;
+		
+		mpl115a2.getPT(&pressureKPA, &temperatureC);
+		pressureKPA = mpl115a2.getPressure();
+		temperatureC = mpl115a2.getTemperature();
+		
+		display.clearDisplay();
+		display.setCursor(0, 0);
 
-    matrix.setCursor(0, 0);
-    matrix.print(":/");
-    matrix.writeScreen();
-  }
-  else if(CO2 >= 1000 && CO2 <= 2000){
-    matrix.setCursor(0, 0);
-    matrix.print(":(");
-    matrix.writeScreen();
-    }
-  else if(CO2 > 2000){
-    matrix.setCursor(0, 0);
-    matrix.print("x(");
-    matrix.writeScreen();
-    }
-  }
-  val = digitalRead(sensor);   // read sensor value
-  if (val == HIGH) {           // check if the sensor is HIGh
-    delay(500);                // delay 100 milliseconds 
-    cnt = 0;
-    /*if (state == LOW) {
-      Serial.println("Motion detected!"); 
-      state = HIGH;       // update variable state to HIGH'
-      
-    }*/
+		if(CO2 > 2000)
+		{
+			display.setTextSize(2);
+			display.print("CO2:      ");
+			display.print(CO2, 2);	
+		}
+		else
+		{
+			display.setTextSize(1);
+			display.print("CO2:      ");
+			display.print(CO2, 2);
+			// display.setCursor(100, 20);
+			display.println(" ppm");
+				
+			display.print("Humidity: ");
+			display.print(scd30.relative_humidity);
+			// display.setCursor(100, 20);
+			display.println(" %");
+
+			display.print("Pressure: ");
+			display.print(pressureKPA);
+			display.println(" kPa");
+				
+			display.print("Temp:     ");
+			display.print(temperatureC);
+			display.println(" C");	
+		}
+			
+
+		display.display();
+		Serial.print("CO2 ");
+		Serial.println(CO2);
+		if(pir_status)
+		{
+			//turn on LED matrix if motion is detected
+		/*
+	  if (CO2 <= 440 && CO2 >= 250) {
+		matrix.setCursor(0, 0);
+		matrix.print(":)");
+		matrix.writeScreen();
+	  }
+	  else if (CO2 < 250) {
+		matrix.setCursor(0, 0);
+		matrix.print("???");
+		matrix.writeScreen();
+	  }
+	  else if(CO2 > 440 && CO2 < 1000) {
+
+		matrix.setCursor(0, 0);
+		matrix.print(":/");
+		matrix.writeScreen();
+	  }
+	  else if(CO2 >= 1000 && CO2 <= 2000){
+		matrix.setCursor(0, 0);
+		matrix.print(":(");
+		matrix.writeScreen();
+		}
+	  else if(CO2 > 2000){
+		matrix.setCursor(0, 0);
+		matrix.print("x(");
+		matrix.writeScreen();
+		}
+	  }
+	  val = digitalRead(sensor);   // read sensor value
+	  if (val == HIGH) {           // check if the sensor is HIGh
+		delay(500);                // delay 100 milliseconds 
+		cnt = 0;
+		/*if (state == LOW) {
+		  Serial.println("Motion detected!"); 
+		  state = HIGH;       // update variable state to HIGH'
+		  
+		}*/
+	  }
   } 
   else {
-      
+  /*    
      // delay(500);             // delay 200 milliseconds 
       cnt++;
       if(cnt == 25){
@@ -184,7 +202,9 @@ void loop() {
         state = LOW;       // update variable state to LOW
     }*/
   }
+  /*
   delay(1000);
   matrix.clearScreen();
-  
+  */
+  delay(1000);
 }
