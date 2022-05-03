@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <Adafruit_MPL115A2.h>
 #include "Adafruit_HT1632.h"
+#include "Adafruit_GFX.h"
 
 #define HT_DATA 2
 #define HT_WR 3
@@ -11,9 +12,9 @@
 #define HT_CS2 5
 
 // use this line for single matrix
-Adafruit_HT1632LEDMatrix matrix = Adafruit_HT1632LEDMatrix(HT_DATA, HT_WR, HT_CS);
-// use this line for two matrices!
-//Adafruit_HT1632LEDMatrix matrix = Adafruit_HT1632LEDMatrix(HT_DATA, HT_WR, HT_CS, HT_CS2);
+//Adafruit_HT1632LEDMatrix matrix = Adafruit_HT1632LEDMatrix(HT_DATA, HT_WR, HT_CS);
+// use// this line for two matrices!
+Adafruit_HT1632LEDMatrix matrix = Adafruit_HT1632LEDMatrix(HT_DATA, HT_WR, HT_CS, HT_CS2);
 
 Adafruit_MPL115A2 mpl115a2;
 Adafruit_SCD30  scd30;
@@ -25,7 +26,161 @@ int state = LOW;             // by default, no motion detected
 int val = 0;                 // variable to store the sensor status (value)
 int cnt; //counter
 int pir_status = 0; //determines whether motion is detected or not
+float CO2 = 0;
 
+//funktsioonid nägude emuleerimiseks
+void smile(){
+ //outline:
+  matrix.drawRect(0, 0, matrix.width()/2, matrix.height(), 1);
+
+  //circle:
+  matrix.drawCircle(matrix.width()/4-1, matrix.height()/2-1, 5, 1);
+
+  //eyes:
+  matrix.drawPixel(9, 5, 1);
+  matrix.drawPixel(13, 5, 1);
+
+  // :)
+  matrix.drawPixel(8, 8, 1);
+  matrix.drawPixel(9, 9, 1);
+  matrix.drawPixel(10, 10, 1);
+  matrix.drawPixel(11, 10, 1);
+  matrix.drawPixel(12, 10, 1);
+  matrix.drawPixel(13, 9, 1);
+  matrix.drawPixel(14, 8, 1);
+  
+  matrix.writeScreen();
+  
+  }
+
+void sad(){
+  //outline:
+  matrix.drawRect(0, 0, matrix.width()/2, matrix.height(), 1);
+
+  //circle:
+  matrix.drawCircle(matrix.width()/4-1, matrix.height()/2-1, 5, 1);
+
+  //eyes:
+  matrix.drawPixel(9, 5, 1);
+  matrix.drawPixel(13, 5, 1);
+
+  // :(
+  matrix.drawPixel(9, 8, 1);
+  matrix.drawPixel(10, 7, 1);
+  matrix.drawPixel(11, 7, 1);
+  matrix.drawPixel(12, 7, 1);
+  matrix.drawPixel(13, 8, 1);
+  matrix.drawPixel(9, 9, 1);
+  matrix.drawPixel(13, 9, 1);
+  
+  matrix.writeScreen();
+  
+  }
+
+void neutral(){
+  
+  //outline:
+  matrix.drawRect(0, 0, matrix.width()/2, matrix.height(), 1);
+
+  //circle:
+  matrix.drawCircle(matrix.width()/4-1, matrix.height()/2-1, 5, 1);
+
+  //eyes:
+  matrix.drawPixel(9, 5, 1);
+  matrix.drawPixel(13, 5, 1);
+
+  // :|
+  matrix.drawPixel(8, 8, 1);
+  matrix.drawPixel(9, 8, 1);
+  matrix.drawPixel(10, 8, 1);
+  matrix.drawPixel(11, 8, 1);
+  matrix.drawPixel(12, 8, 1);
+  matrix.drawPixel(13, 8, 1);
+  matrix.drawPixel(14, 8, 1);
+  
+  matrix.writeScreen();
+  
+  }
+
+void death(){
+  //outline:
+  matrix.drawRect(0, 0, matrix.width()/2, matrix.height(), 1);
+
+  // X1
+  matrix.drawPixel(8, 5, 1);
+  matrix.drawPixel(7, 6, 1);
+  matrix.drawPixel(9, 4, 1);  
+  matrix.drawPixel(7, 4, 1);
+  matrix.drawPixel(9, 6, 1);
+  matrix.drawPixel(6, 3, 1);
+  matrix.drawPixel(6, 7, 1);
+  matrix.drawPixel(10, 3, 1);
+  matrix.drawPixel(10, 7, 1);
+  
+  // X2
+  matrix.drawPixel(14, 5, 1);
+  matrix.drawPixel(13, 6, 1);
+  matrix.drawPixel(15, 4, 1);  
+  matrix.drawPixel(13, 4, 1);
+  matrix.drawPixel(15, 6, 1);
+  matrix.drawPixel(12, 3, 1);
+  matrix.drawPixel(12, 7, 1);
+  matrix.drawPixel(16, 3, 1);
+  matrix.drawPixel(16, 7, 1);
+
+  // x(
+  matrix.drawPixel(10, 10, 1);
+  matrix.drawPixel(11, 10, 1);
+  matrix.drawPixel(12, 10, 1);
+  matrix.drawPixel(13, 11, 1);
+  matrix.drawPixel(8, 12, 1);
+  matrix.drawPixel(9, 11, 1);
+  matrix.drawPixel(14, 12, 1);
+  matrix.writeScreen();
+  
+  }
+
+void heart(){
+  //outline:
+  matrix.drawRect(0, 0, matrix.width()/2, matrix.height(), 1);
+  matrix.fillCircle(matrix.width()/4-1, matrix.height()/2, 3, 1);
+
+  matrix.drawPixel(9, 5, 1);
+  matrix.drawPixel(8, 6, 1);
+  matrix.drawPixel(9, 4, 1);
+  matrix.drawPixel(8, 5, 1);
+  matrix.drawPixel(13, 5, 1);
+  matrix.drawPixel(14, 6, 1);
+   matrix.drawPixel(13, 4, 1);
+  matrix.drawPixel(14, 5, 1);
+  matrix.drawPixel(11, 12, 1);
+  matrix.drawPixel(7, 8, 1);
+  matrix.drawPixel(7, 6, 1);
+  matrix.drawPixel(7, 7, 1);
+  matrix.drawPixel(15, 8, 1);
+  matrix.drawPixel(15, 6, 1);
+  matrix.drawPixel(15, 7, 1);
+  matrix.drawPixel(12, 4, 1);
+  matrix.drawPixel(10, 4, 1);
+  
+  matrix.drawPixel(13, 4, 1);
+  matrix.drawPixel(9, 4, 1);
+  /*
+  matrix.drawPixel(8, 5, 1);
+  matrix.drawPixel(7, 6, 1);
+  matrix.drawPixel(9, 4, 1);  
+  matrix.drawPixel(7, 4, 1);
+  matrix.drawPixel(9, 6, 1);
+  matrix.drawPixel(6, 3, 1);
+  matrix.drawPixel(6, 7, 1);
+  matrix.drawPixel(10, 3, 1);
+  matrix.drawPixel(10, 7, 1);*/
+  
+  matrix.writeScreen();
+ 
+  }
+ 
+ 
 void setup(void) {
     Serial.begin(9600);
     pinMode(sensor, INPUT);    // initialize sensor as an input
@@ -55,7 +210,7 @@ void setup(void) {
         Serial.println(F("SSD1306 allocation failed"));
     }
 
-    if (!scd30.setMeasurementInterval(3)) 
+    if (!scd30.setMeasurementInterval(10)) 
 	{
         Serial.println("Failed to set measurement interval");
     }
@@ -72,16 +227,18 @@ void setup(void) {
 
 
     matrix.begin(ADA_HT1632_COMMON_16NMOS);
-    matrix.fillScreen();
-    delay(500);
+   
+    
     matrix.clearScreen();
-    matrix.setTextWrap(false);
+   
 }
 
 
 void loop() {
     Serial.println("Loop begin");
     int pirinput = analogRead(A0);
+	Serial.print("pir input ");
+	Serial.println(pirinput);
     if(pirinput > 500 && !pir_status)
     {
 	    pir_status = 1;
@@ -101,7 +258,7 @@ void loop() {
             display.display();
 		}
 		float pressureKPA = 0, temperatureC = 0;
-		float CO2 = 0;
+		
 		CO2 = scd30.CO2;
 		
 		mpl115a2.getPT(&pressureKPA, &temperatureC);
@@ -143,50 +300,9 @@ void loop() {
 		display.display();
 		Serial.print("CO2 ");
 		Serial.println(CO2);
-		if(pir_status)
-		{
-			//turn on LED matrix if motion is detected
-		/*
-	  if (CO2 <= 440 && CO2 >= 250) {
-		matrix.setCursor(0, 0);
-		matrix.print(":)");
-		matrix.writeScreen();
-	  }
-	  else if (CO2 < 250) {
-		matrix.setCursor(0, 0);
-		matrix.print("???");
-		matrix.writeScreen();
-	  }
-	  else if(CO2 > 440 && CO2 < 1000) {
-
-		matrix.setCursor(0, 0);
-		matrix.print(":/");
-		matrix.writeScreen();
-	  }
-	  else if(CO2 >= 1000 && CO2 <= 2000){
-		matrix.setCursor(0, 0);
-		matrix.print(":(");
-		matrix.writeScreen();
-		}
-	  else if(CO2 > 2000){
-		matrix.setCursor(0, 0);
-		matrix.print("x(");
-		matrix.writeScreen();
-		}
-	  }
-	  val = digitalRead(sensor);   // read sensor value
-	  if (val == HIGH) {           // check if the sensor is HIGh
-		delay(500);                // delay 100 milliseconds 
-		cnt = 0;
-		/*if (state == LOW) {
-		  Serial.println("Motion detected!"); 
-		  state = HIGH;       // update variable state to HIGH'
-		  
-		}*/
-	  }
-  } 
-  else {
-  /*    
+    } 
+    else {
+    /*    
      // delay(500);             // delay 200 milliseconds 
       cnt++;
       if(cnt == 25){
@@ -201,10 +317,30 @@ void loop() {
         Serial.println("Motion stopped!");
         state = LOW;       // update variable state to LOW
     }*/
-  }
-  /*
-  delay(1000);
-  matrix.clearScreen();
-  */
+    }
+	matrix.clearScreen();
+    if(pir_status)
+	{	
+		
+		if (CO2 <= 440 && CO2 >= 250) {
+			smile();
+	    }
+	    else if (CO2 < 250) {
+		    matrix.setCursor(0, 0);
+		    matrix.print("???");
+		    matrix.writeScreen();
+	    }
+	    else if(CO2 > 440 && CO2 < 1000) {
+		    neutral();
+	    }
+	    else if(CO2 >= 1000 && CO2 <= 2000){
+		    sad();
+		}
+	    else if(CO2 > 2000){
+		    death();
+		}
+		//delay(1000);
+    }
+
   delay(1000);
 }
